@@ -2,17 +2,13 @@
   "name": "endf-syntax",
   "displayName": "ENDF Syntax Highlighting",
   "description": "Syntax highlighting for ENDF and ENDF-6 evaluated nuclear data files.",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "tokamaster",
   "author": {
     "name": "tokamaster"
   },
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "MIT",
   "icon": "images/icon.png",
-  "galleryBanner": {
-    "color": "#020617",
-    "theme": "dark"
-  },
   "pricing": "Free",
   "repository": {
     "type": "git",
