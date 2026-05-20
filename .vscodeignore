@@ -1,0 +1,16 @@
+.gitignore
+.vscodeignore
+.git/**
+.vscode/**
+.vscode-test/**
+node_modules/**
+out/**
+dist/**
+package-lock.json
+.DS_Store
+**/.DS_Store
+*.vsix
+*.log
+.env
+.env.*
+n-003_Li_007.endf

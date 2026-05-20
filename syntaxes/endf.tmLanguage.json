@@ -1,0 +1,303 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "ENDF",
+  "scopeName": "source.endf",
+  "patterns": [
+    {
+      "include": "#mf1-mt451-record"
+    },
+    {
+      "include": "#record"
+    }
+  ],
+  "repository": {
+    "mf1-mt451-record": {
+      "name": "meta.record.documentation.endf",
+      "begin": "^(?=.{66}.{4}\\s*1\\s*451(?:.{5})?$)",
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#tail"
+        },
+        {
+          "include": "#references"
+        },
+        {
+          "include": "#payload-fields"
+        },
+        {
+          "match": "[A-Za-z][A-Za-z0-9_./+\\-()\\[\\],']*",
+          "name": "comment.block.documentation.word.endf"
+        },
+        {
+          "match": "\\*{3,}|-{3,}",
+          "name": "punctuation.separator.documentation.endf"
+        }
+      ]
+    },
+    "record": {
+      "name": "meta.record.endf",
+      "begin": "^(?=.{75}(?:.{5})?$)",
+      "end": "$",
+      "patterns": [
+        {
+          "include": "#tail"
+        },
+        {
+          "include": "#references"
+        },
+        {
+          "include": "#payload-fields"
+        }
+      ]
+    },
+    "tail": {
+      "patterns": [
+        {
+          "match": "(?<=^.{66})(\\s*-1)(\\s*0)(\\s*0)(\\s*\\d{1,5})?$",
+          "name": "meta.tail.tend.endf",
+          "captures": {
+            "1": {
+              "name": "keyword.control.end.tape.mat.endf"
+            },
+            "2": {
+              "name": "keyword.control.end.tape.mf.endf"
+            },
+            "3": {
+              "name": "keyword.control.end.tape.mt.endf"
+            },
+            "4": {
+              "name": "constant.numeric.sequence.endf"
+            }
+          }
+        },
+        {
+          "match": "(?<=^.{66})(\\s*0)(\\s*0)(\\s*0)(\\s*\\d{1,5})?$",
+          "name": "meta.tail.mend.endf",
+          "captures": {
+            "1": {
+              "name": "keyword.control.end.material.mat.endf"
+            },
+            "2": {
+              "name": "keyword.control.end.material.mf.endf"
+            },
+            "3": {
+              "name": "keyword.control.end.material.mt.endf"
+            },
+            "4": {
+              "name": "constant.numeric.sequence.endf"
+            }
+          }
+        },
+        {
+          "match": "(?<=^.{66})(\\s*[1-9]\\d{0,3})(\\s*0)(\\s*0)(\\s*\\d{1,5})?$",
+          "name": "meta.tail.fend.endf",
+          "captures": {
+            "1": {
+              "name": "entity.name.section.mat.endf"
+            },
+            "2": {
+              "name": "keyword.control.end.file.mf.endf"
+            },
+            "3": {
+              "name": "keyword.control.end.file.mt.endf"
+            },
+            "4": {
+              "name": "constant.numeric.sequence.endf"
+            }
+          }
+        },
+        {
+          "match": "(?<=^.{66})(\\s*-?\\d{1,4})(\\s*[1-9]\\d?)(\\s*0)(\\s*\\d{1,5})?$",
+          "name": "meta.tail.send.endf",
+          "captures": {
+            "1": {
+              "name": "entity.name.section.mat.endf"
+            },
+            "2": {
+              "name": "entity.name.section.mf.endf"
+            },
+            "3": {
+              "name": "keyword.control.end.section.mt.endf"
+            },
+            "4": {
+              "name": "constant.numeric.sequence.endf"
+            }
+          }
+        },
+        {
+          "match": "(?<=^.{66})(.{4})(.{2})(.{3})(.{5})?$",
+          "name": "meta.tail.endf",
+          "captures": {
+            "1": {
+              "name": "entity.name.section.mat.endf"
+            },
+            "2": {
+              "name": "entity.name.section.mf.endf"
+            },
+            "3": {
+              "name": "entity.name.section.mt.endf"
+            },
+            "4": {
+              "name": "constant.numeric.sequence.endf"
+            }
+          }
+        }
+      ]
+    },
+    "payload-fields": {
+      "patterns": [
+        {
+          "include": "#field-0"
+        },
+        {
+          "include": "#field-11"
+        },
+        {
+          "include": "#field-22"
+        },
+        {
+          "include": "#field-33"
+        },
+        {
+          "include": "#field-44"
+        },
+        {
+          "include": "#field-55"
+        }
+      ]
+    },
+    "field-0": {
+      "patterns": [
+        {
+          "include": "#integer-field-0"
+        },
+        {
+          "include": "#float-field-0"
+        }
+      ]
+    },
+    "field-11": {
+      "patterns": [
+        {
+          "include": "#integer-field-11"
+        },
+        {
+          "include": "#float-field-11"
+        }
+      ]
+    },
+    "field-22": {
+      "patterns": [
+        {
+          "include": "#integer-field-22"
+        },
+        {
+          "include": "#float-field-22"
+        }
+      ]
+    },
+    "field-33": {
+      "patterns": [
+        {
+          "include": "#integer-field-33"
+        },
+        {
+          "include": "#float-field-33"
+        }
+      ]
+    },
+    "field-44": {
+      "patterns": [
+        {
+          "include": "#integer-field-44"
+        },
+        {
+          "include": "#float-field-44"
+        }
+      ]
+    },
+    "field-55": {
+      "patterns": [
+        {
+          "include": "#integer-field-55"
+        },
+        {
+          "include": "#float-field-55"
+        }
+      ]
+    },
+    "integer-field-0": {
+      "match": "^(?=[\\s+\\-0-9]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.integer.field.endf"
+    },
+    "integer-field-11": {
+      "match": "(?<=^.{11})(?=[\\s+\\-0-9]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.integer.field.endf"
+    },
+    "integer-field-22": {
+      "match": "(?<=^.{22})(?=[\\s+\\-0-9]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.integer.field.endf"
+    },
+    "integer-field-33": {
+      "match": "(?<=^.{33})(?=[\\s+\\-0-9]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.integer.field.endf"
+    },
+    "integer-field-44": {
+      "match": "(?<=^.{44})(?=[\\s+\\-0-9]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.integer.field.endf"
+    },
+    "integer-field-55": {
+      "match": "(?<=^.{55})(?=[\\s+\\-0-9]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.integer.field.endf"
+    },
+    "float-field-0": {
+      "match": "^(?=[\\s+\\-.0-9EeDd]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.float.field.endf"
+    },
+    "float-field-11": {
+      "match": "(?<=^.{11})(?=[\\s+\\-.0-9EeDd]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.float.field.endf"
+    },
+    "float-field-22": {
+      "match": "(?<=^.{22})(?=[\\s+\\-.0-9EeDd]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.float.field.endf"
+    },
+    "float-field-33": {
+      "match": "(?<=^.{33})(?=[\\s+\\-.0-9EeDd]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.float.field.endf"
+    },
+    "float-field-44": {
+      "match": "(?<=^.{44})(?=[\\s+\\-.0-9EeDd]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.float.field.endf"
+    },
+    "float-field-55": {
+      "match": "(?<=^.{55})(?=[\\s+\\-.0-9EeDd]{11})(?=.{0,10}\\d).{11}",
+      "name": "constant.numeric.float.field.endf"
+    },
+    "references": {
+      "patterns": [
+        {
+          "match": "\\b(MAT|MF|MT)\\s*(=|-)?\\s*(\\d+)(?:\\s*(-)\\s*(\\d+))?\\b",
+          "captures": {
+            "1": {
+              "name": "support.type.record-key.endf"
+            },
+            "2": {
+              "name": "keyword.operator.assignment.endf"
+            },
+            "3": {
+              "name": "constant.numeric.integer.endf"
+            },
+            "4": {
+              "name": "keyword.operator.range.endf"
+            },
+            "5": {
+              "name": "constant.numeric.integer.endf"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

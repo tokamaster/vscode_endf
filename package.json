@@ -1,0 +1,79 @@
+{
+  "name": "endf-syntax",
+  "displayName": "ENDF Syntax Highlighting",
+  "description": "Syntax highlighting for ENDF and ENDF-6 evaluated nuclear data files.",
+  "version": "0.0.1",
+  "publisher": "tokamaster",
+  "author": {
+    "name": "tokamaster"
+  },
+  "license": "SEE LICENSE IN LICENSE",
+  "icon": "images/icon.png",
+  "galleryBanner": {
+    "color": "#020617",
+    "theme": "dark"
+  },
+  "pricing": "Free",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tokamaster/vscode_endf.git"
+  },
+  "bugs": {
+    "url": "https://github.com/tokamaster/vscode_endf/issues"
+  },
+  "homepage": "https://github.com/tokamaster/vscode_endf#readme",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "activationEvents": [
+    "onLanguage:endf"
+  ],
+  "main": "./extension.js",
+  "categories": [
+    "Programming Languages"
+  ],
+  "keywords": [
+    "endf",
+    "endf-6",
+    "evaluated nuclear data",
+    "nuclear-data",
+    "syntax",
+    "highlighting",
+    "vscode"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "endf",
+        "aliases": [
+          "ENDF",
+          "ENDF-6"
+        ],
+        "extensions": [
+          ".endf",
+          ".endf6",
+          ".pendf",
+          ".gendf",
+          ".tape"
+        ],
+        "filenamePatterns": [
+          "*endf*.dat",
+          "*ENDF*.dat",
+          "*endf*.DAT",
+          "*ENDF*.DAT",
+          "tape*",
+          "TAPE*"
+        ],
+        "firstLine": "^(?:\\s*ENDF/B.*\\s+-?\\d+\\s+\\d+\\s*$|.{66}\\s*-?\\d{1,4}\\s*\\d{1,2}\\s*\\d{1,3}(?:\\s*\\d{1,5})?\\s*$)",
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "endf",
+        "scopeName": "source.endf",
+        "path": "./syntaxes/endf.tmLanguage.json"
+      }
+    ]
+  }
+}
