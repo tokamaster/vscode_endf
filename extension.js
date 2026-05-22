@@ -1,4 +1,12 @@
 const vscode = require('vscode');
+const {
+  describeRecordKey,
+  describeReferenceRange,
+  getCompletionEntries,
+  getNumericCompletionContext,
+  getRecordTypeInfo,
+  parseEndfNumber
+} = require('./endfReference');
 
 const PAYLOAD_FIELDS = [
   {
@@ -46,85 +54,8 @@ const TAIL_FIELDS = [
   { key: 'NS', start: 75, end: 80 }
 ];
 
-const MF_DESCRIPTIONS = new Map([
-  [0, 'End-record marker used with SEND, FEND, MEND, or TEND records.'],
-  [1, 'General information.'],
-  [2, 'Resonance parameter data.'],
-  [3, 'Reaction cross sections.'],
-  [4, 'Angular distributions of emitted particles.'],
-  [5, 'Energy distributions of emitted particles.'],
-  [6, 'Product energy-angle distributions.'],
-  [7, 'Thermal neutron scattering law data.'],
-  [8, 'Radioactive decay and fission product yield data.'],
-  [9, 'Multiplicities for radioactive nuclide production.'],
-  [10, 'Cross sections for radioactive nuclide production.'],
-  [12, 'Photon production multiplicities and transition probabilities.'],
-  [13, 'Photon production cross sections.'],
-  [14, 'Photon angular distributions.'],
-  [15, 'Continuous photon energy spectra.'],
-  [23, 'Photon or electro-atomic interaction cross sections.'],
-  [26, 'Electro-atomic angle and energy distributions.'],
-  [27, 'Atomic form factors or scattering functions.'],
-  [28, 'Atomic relaxation data.'],
-  [30, 'Data covariances from parameter covariances and uncertainties.'],
-  [31, 'Covariances of average neutron multiplicities.'],
-  [32, 'Covariances of resonance parameters.'],
-  [33, 'Covariances of neutron cross sections.'],
-  [34, 'Covariances of angular distributions.'],
-  [35, 'Covariances of energy distributions.'],
-  [40, 'Covariances of radionuclide production cross sections.']
-]);
-
-const MT_DESCRIPTIONS = new Map([
-  [0, 'End-record marker used with SEND, FEND, MEND, or TEND records.'],
-  [1, 'Total cross section.'],
-  [2, 'Elastic scattering.'],
-  [3, 'Nonelastic cross section.'],
-  [4, 'Total inelastic scattering.'],
-  [5, 'Sum of reactions not otherwise represented by another MT number.'],
-  [11, '2nd neutron production.'],
-  [16, '(n,2n).'],
-  [17, '(n,3n).'],
-  [18, 'Fission.'],
-  [19, 'First-chance fission.'],
-  [20, 'Second-chance fission.'],
-  [21, 'Third-chance fission.'],
-  [22, '(n,n alpha).'],
-  [24, '(n,2n alpha).'],
-  [25, '(n,3n alpha).'],
-  [28, '(n,np).'],
-  [32, '(n,nd).'],
-  [33, '(n,nt).'],
-  [34, '(n,n He-3).'],
-  [37, '(n,4n).'],
-  [38, 'Fourth-chance fission.'],
-  [41, '(n,2np).'],
-  [42, '(n,3np).'],
-  [44, '(n,n2p).'],
-  [45, '(n,np alpha).'],
-  [91, 'Continuum inelastic scattering.'],
-  [101, 'Neutron disappearance.'],
-  [102, 'Radiative capture, usually (n,gamma).'],
-  [103, '(n,p).'],
-  [104, '(n,d).'],
-  [105, '(n,t).'],
-  [106, '(n,He-3).'],
-  [107, '(n,alpha).'],
-  [108, '(n,2 alpha).'],
-  [109, '(n,3 alpha).'],
-  [111, '(n,2p).'],
-  [112, '(n,p alpha).'],
-  [151, 'Resolved and unresolved resonance parameters.'],
-  [452, 'Total neutron multiplicity, nu-bar.'],
-  [455, 'Delayed neutron multiplicity.'],
-  [456, 'Prompt neutron multiplicity.'],
-  [458, 'Energy release from fission.'],
-  [459, 'Cumulative fission product yield.'],
-  [460, 'Delayed photon data.'],
-  [451, 'Descriptive data and directory.']
-]);
-
-const REFERENCE_PATTERN = /\b(MAT|MF|MT)\s*(=|-)?\s*(\d+)(?:\s*(-)\s*(\d+))?\b/g;
+const REFERENCE_PATTERN = /\b(MAT|MF|MT|NS|NSUB|NLIB|INT|LR)\s*(=|-)?\s*(\d+)(?:\s*(-)\s*(\d+))?\b/gi;
+const RECORD_TYPE_PATTERN = /\b(TPID|TEXT|CONT|DIR|HEAD|END|SEND|FEND|MEND|TEND|LIST|TAB1|TAB2|INTG)\b/gi;
 const NUMBER_PATTERN = /[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[EeDd][+-]?\d+|[+-]\d+)?/g;
 
 function activate(context) {
@@ -144,6 +75,12 @@ function activate(context) {
       return new vscode.Hover(markdown, info.range);
     }
   }));
+
+  context.subscriptions.push(vscode.languages.registerCompletionItemProvider({ language: 'endf' }, {
+    provideCompletionItems(document, position) {
+      return provideReferenceCompletions(document, position);
+    }
+  }, '=', ' '));
 
   const updateStatusBar = () => {
     const editor = vscode.window.activeTextEditor;
@@ -171,6 +108,37 @@ function activate(context) {
 
 function deactivate() {}
 
+function provideReferenceCompletions(document, position) {
+  const linePrefix = document.lineAt(position.line).text.slice(0, position.character);
+  const context = getNumericCompletionContext(linePrefix);
+  if (!context) {
+    return undefined;
+  }
+
+  const entries = getCompletionEntries(context.key)
+    .filter((entry) => !context.valuePrefix || entry.label.startsWith(context.valuePrefix) || entry.insertText.startsWith(context.valuePrefix));
+  if (!entries.length) {
+    return undefined;
+  }
+
+  const replacementRange = new vscode.Range(
+    position.line,
+    position.character - context.valuePrefix.length,
+    position.line,
+    position.character
+  );
+
+  return entries.map((entry) => {
+    const item = new vscode.CompletionItem(entry.label, vscode.CompletionItemKind.Value);
+    item.insertText = entry.insertText;
+    item.detail = entry.detail;
+    item.documentation = new vscode.MarkdownString(entry.documentation);
+    item.range = replacementRange;
+    item.sortText = entry.sortText;
+    return item;
+  });
+}
+
 function getStatusPosition(editor) {
   const selection = editor.selection;
   if (!selection.isEmpty && selection.start.line === selection.end.line) {
@@ -193,6 +161,7 @@ function getEndfInfoAt(document, position) {
   const line = document.lineAt(position.line).text;
   const column = position.character;
   return describeTextReference(line, position.line, column)
+    || describeRecordTypeReference(line, position.line, column)
     || describeTailField(line, position.line, column)
     || describePayloadField(line, position.line, column);
 }
@@ -206,11 +175,9 @@ function describeTextReference(line, lineNumber, column) {
       continue;
     }
 
-    const key = match[1];
+    const key = match[1].toUpperCase();
     const firstValue = match[3];
     const secondValue = match[5];
-    const firstStart = start + match[0].indexOf(firstValue);
-    const firstEnd = firstStart + firstValue.length;
     const secondStart = secondValue ? start + match[0].lastIndexOf(secondValue) : undefined;
     const secondEnd = secondStart !== undefined ? secondStart + secondValue.length : undefined;
     const selectedRaw = secondStart !== undefined && column >= secondStart && column < secondEnd
@@ -234,6 +201,38 @@ function describeTextReference(line, lineNumber, column) {
       range,
       markdown,
       statusText: `${key} ${selectedRaw}: ${secondValue ? describeRecordKey(key, value) : meaning}`
+    };
+  }
+
+  return undefined;
+}
+
+function describeRecordTypeReference(line, lineNumber, column) {
+  RECORD_TYPE_PATTERN.lastIndex = 0;
+  for (const match of line.matchAll(RECORD_TYPE_PATTERN)) {
+    const start = match.index;
+    const end = start + match[0].length;
+    if (column < start || column >= end) {
+      continue;
+    }
+
+    const info = getRecordTypeInfo(match[1]);
+    if (!info) {
+      continue;
+    }
+
+    const markdown = [
+      `**ENDF ${info.key} record**`,
+      '',
+      `Raw: \`${match[0]}\``,
+      `Meaning: ${info.description}`,
+      info.format ? `Format: \`${info.format}\`` : undefined
+    ].filter(Boolean).join('\n\n');
+
+    return {
+      range: new vscode.Range(lineNumber, start, lineNumber, end),
+      markdown,
+      statusText: `${info.key}: ${info.description}`
     };
   }
 
@@ -332,33 +331,6 @@ function findNumberInField(raw, fieldStart, column) {
   return undefined;
 }
 
-function parseEndfNumber(raw) {
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return undefined;
-  }
-
-  let normalized = trimmed.replace(/[Dd]/g, 'E');
-  if (!/[Ee]/.test(normalized)) {
-    normalized = normalized.replace(/^([+-]?(?:\d+\.\d*|\.\d+|\d+))([+-]\d+)$/, '$1E$2');
-  }
-
-  const value = Number(normalized);
-  if (!Number.isFinite(value)) {
-    return undefined;
-  }
-
-  return formatNumber(value);
-}
-
-function formatNumber(value) {
-  if (Number.isInteger(value)) {
-    return String(value);
-  }
-
-  return Number(value.toPrecision(12)).toString();
-}
-
 function parseTail(line) {
   return {
     mat: toNumber(line.slice(66, 70)),
@@ -378,88 +350,6 @@ function toNumber(raw) {
   return Number.isFinite(value) ? value : undefined;
 }
 
-function describeRecordKey(key, value, tail) {
-  if (key === 'MAT') {
-    return describeMat(value, tail);
-  }
-
-  if (key === 'MF') {
-    return MF_DESCRIPTIONS.get(value) || 'ENDF file number. This identifies the broad data category for the record.';
-  }
-
-  if (key === 'MT') {
-    return describeMt(value);
-  }
-
-  if (key === 'NS') {
-    return 'Sequence number for the physical record. It is optional in some ENDF-style files.';
-  }
-
-  return 'ENDF fixed-column control value.';
-}
-
-function describeMat(value, tail) {
-  if (tail?.mat === -1 && tail?.mf === 0 && tail?.mt === 0) {
-    return 'TEND marker: end of tape.';
-  }
-
-  if (tail?.mat === 0 && tail?.mf === 0 && tail?.mt === 0) {
-    return 'MEND marker: end of material.';
-  }
-
-  if (value === 0) {
-    return 'End-of-material marker when MF and MT are also zero.';
-  }
-
-  return 'Material identifier assigned by the ENDF library.';
-}
-
-function describeMt(value) {
-  if (MT_DESCRIPTIONS.has(value)) {
-    return MT_DESCRIPTIONS.get(value);
-  }
-
-  if (value >= 51 && value <= 90) {
-    return `Discrete inelastic scattering level ${value - 50}.`;
-  }
-
-  if (value >= 600 && value <= 649) {
-    return 'Proton production reaction, level, or continuum subsection.';
-  }
-
-  if (value >= 650 && value <= 699) {
-    return 'Deuteron production reaction, level, or continuum subsection.';
-  }
-
-  if (value >= 700 && value <= 749) {
-    return 'Triton production reaction, level, or continuum subsection.';
-  }
-
-  if (value >= 750 && value <= 799) {
-    return 'Helium-3 production reaction, level, or continuum subsection.';
-  }
-
-  if (value >= 800 && value <= 849) {
-    return 'Alpha production reaction, level, or continuum subsection.';
-  }
-
-  if (value >= 851 && value <= 870) {
-    return 'Lumped reaction covariance or derived reaction grouping.';
-  }
-
-  return 'ENDF reaction or section number. Check the ENDF-6 manual for this specific MT code.';
-}
-
-function describeReferenceRange(key, firstValue, secondValue) {
-  const first = Number(firstValue);
-  const second = Number(secondValue);
-  if (key === 'MT' && first >= 51 && second <= 90) {
-    return `MT range ${firstValue}-${secondValue}: discrete inelastic scattering levels ${first - 50}-${second - 50}.`;
-  }
-
-  return `${key} range ${firstValue}-${secondValue}. First value: ${describeRecordKey(key, first)} Last value: ${describeRecordKey(key, second)}`;
-}
-
 function describeRecordContext(tail) {
   if (tail.mat === undefined && tail.mf === undefined && tail.mt === undefined) {
     return undefined;
@@ -471,11 +361,11 @@ function describeRecordContext(tail) {
   }
 
   if (tail.mf !== undefined) {
-    parts.push(`MF ${tail.mf}${MF_DESCRIPTIONS.has(tail.mf) ? ` (${MF_DESCRIPTIONS.get(tail.mf)})` : ''}`);
+    parts.push(`MF ${tail.mf} (${describeRecordKey('MF', tail.mf)})`);
   }
 
   if (tail.mt !== undefined) {
-    parts.push(`MT ${tail.mt}${describeMt(tail.mt) ? ` (${describeMt(tail.mt)})` : ''}`);
+    parts.push(`MT ${tail.mt} (${describeRecordKey('MT', tail.mt)})`);
   }
 
   if (tail.ns !== undefined) {

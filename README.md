@@ -56,6 +56,22 @@ the status bar; hover shows the fuller explanation.
 - common `MF` and `MT` numbers are expanded to their ENDF-6 descriptions
 - textual references such as `MF=3`, `MF3`, `MF 12`, `MT=102`, `MT1`, and
   `MT=52-82` are also explained
+- manual-backed references for `NSUB`, `NLIB`, `INT`, `LR`, and ENDF record
+  types such as `TEXT`, `CONT`, `HEAD`, `LIST`, `TAB1`, `TAB2`, `INTG`,
+  `SEND`, `FEND`, `MEND`, and `TEND` are explained in hovers
+
+## Reference Completions
+
+The extension provides lightweight completions for common ENDF manual lookup
+codes. In ENDF documents, type a supported key followed by `=` or a space to see
+curated suggestions:
+
+- `MF=` for file-type numbers
+- `MT=` for common reaction type numbers and important ranges
+- `NSUB=` for sublibrary numbers
+- `NLIB=` for library identifiers
+- `INT=` for interpolation laws
+- `LR=` for residual breakup flags
 
 Payload field meanings are often record-specific, so the hover reports the
 reliable fixed-field role unless a standard `MF`/`MT` code description applies.
@@ -91,9 +107,15 @@ not included in the packaged extension.
 
 ## Development
 
-The extension entry point is `extension.js`, the language contribution is
-declared in `package.json`, and the TextMate grammar is in
-`syntaxes/endf.tmLanguage.json`.
+The extension entry point is `extension.js`, the manual-backed reference data is
+curated in `endfReference.js`, the language contribution is declared in
+`package.json`, and the TextMate grammar is in `syntaxes/endf.tmLanguage.json`.
+
+Run the lightweight unit tests with:
+
+```shell
+npm test
+```
 
 To test changes, open the repository in VS Code and use the provided
 `.vscode/launch.json` configuration. Reload the Extension Development Host
